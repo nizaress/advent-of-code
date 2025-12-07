@@ -4,50 +4,61 @@
 #include <string>
 
 
-void get_input(std::vector<std::vector<unsigned long>> &id_ranges, std::vector<unsigned long> &ingredient_ids, std::string file_name){
+void get_input(std::vector<std::vector<unsigned long>> &operation_nums, std::vector<char> &operations, std::string file_name){
     std::string line{};
     std::ifstream file(file_name);
-    if(file.is_open()){
-    	while(getline(file,line) && line!=""){
-            std::vector<unsigned long> range{};
-            for(int i=0; i<static_cast<int>(line.length()); ++i){
 
-                if(line[i]=='-'){
-                    range.push_back(std::stoul(line.substr(0,i)));
-                    range.push_back(std::stoul(line.substr(i+1)));
-                    break;
+    if(file.is_open()){
+    	while(getline(file,line) && line[0]!='*' && line[0]!='+'){
+            std::vector<unsigned long> number_line{};
+            int num_start{};
+            for(int i=0; i<static_cast<int>(line.length()); ++i){
+                if(line[num_start]==' ' && line[i]==' '){ ++num_start; continue; }
+                if(line[i]==' '){
+                    if(num_start<i)
+                        number_line.push_back(std::stoul(line.substr(num_start,(i-num_start))));
+                    num_start = i+1;
+                }
+                if(i==static_cast<int>(line.length()-1)){
+                    if(num_start<i)
+                        number_line.push_back(std::stoul(line.substr(num_start,(i+1-num_start))));
                 }
             }
-            id_ranges.push_back(range);
+            operation_nums.push_back(number_line);
 	    }
 
-        while(getline(file,line)){
-            ingredient_ids.push_back(std::stoul(line));
-	    }
+        for(auto c : line){
+            if(c!=' ')
+                operations.push_back(c);
+        }
         file.close();
     }
 }
 
 
-bool check_in_range(unsigned long id, std::vector<std::vector<unsigned long>> &id_ranges){
-    for(std::vector<unsigned long> range : id_ranges){
-        if(id>=range[0] && id<=range[1]) return true;
+void compute_columns(std::vector<std::vector<unsigned long>> &operation_nums, std::vector<char> &operations){
+    for(unsigned int i{1}; i<static_cast<unsigned int>(operation_nums.size()); ++i){
+        for(unsigned int j{}; j<static_cast<unsigned int>(operation_nums[0].size()); ++j){
+            if(operations[j]=='*')
+                operation_nums[0][j] *= operation_nums[i][j];
+            else if(operations[j]=='+')
+                operation_nums[0][j] += operation_nums[i][j];
+        }
     }
-    return false;
 }
 
 
 int main(){
-    std::vector<std::vector<unsigned long>> id_ranges{};
-    std::vector<unsigned long> ingredient_ids{};
-    unsigned int fresh_ingredient_count{};
+    std::vector<std::vector<unsigned long>> operation_nums{};
+    std::vector<char> operations{};
+    unsigned long final_result{};
     
-    get_input(id_ranges, ingredient_ids, "input");
+    get_input(operation_nums, operations, "input");
+    compute_columns(operation_nums, operations);
 
-    for(unsigned long id : ingredient_ids){
-        if(check_in_range(id, id_ranges)) ++fresh_ingredient_count;
-    }
-
-    std::cout << "The final count of fresh ingredients is: " << fresh_ingredient_count << "\n";
+    for(unsigned long num : operation_nums[0]){
+        final_result += num;
+}
+    std::cout << "The final sum of results is: " << final_result << "\n";
     return 0;
 }
