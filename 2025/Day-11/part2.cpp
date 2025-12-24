@@ -6,10 +6,6 @@
 #include <tuple>
 
 
-// Memory for the search
-std::unordered_map<unsigned int, long long> memory_paths;
-
-
 void get_data(std::vector<std::vector<unsigned int>> &connections, std::string file_name){
     std::string line{};
     std::ifstream file(file_name);
@@ -91,23 +87,23 @@ void get_data(std::vector<std::vector<unsigned int>> &connections, std::string f
 
 
 // New logic for part 2
-long long get_every_path(unsigned int current_rack, bool fft, bool dac, const std::vector<std::vector<unsigned int>> &connections){
-
-    if(current_rack==1){
-        if(fft && dac) return 1;
-        return 0;
-    }
-    //if(memory_paths[current_rack]!=-1) return memory_paths[current_rack];
-
+long long get_every_path(unsigned int current_rack, bool fft, bool dac, const std::vector<std::vector<unsigned int>> &connections,
+                         std::vector<std::vector<std::vector<long long>>> &dp, std::vector<std::vector<std::vector<bool>>> &visited){
     if(current_rack==2) fft = true;
     if(current_rack==3) dac = true;
+    
+    if(visited[current_rack][fft][dac])
+        return dp[current_rack][fft][dac];
+    visited[current_rack][fft][dac] = true;
+
+    if(current_rack==1)
+        return dp[current_rack][fft][dac] = (fft && dac);
 
     long long num_paths{};
     for(auto rack : connections[current_rack])
-        num_paths += get_every_path(rack, fft, dac, connections);
+        num_paths += get_every_path(rack, fft, dac, connections, dp, visited);
     
-    //memory_paths[current_rack] = num_paths;
-    return num_paths;
+    return dp[current_rack][fft][dac] = num_paths;
 }
 
 
@@ -117,12 +113,13 @@ int main(){
     connections.push_back(std::vector<unsigned int>());
     connections.push_back(std::vector<unsigned int>());
     connections.push_back(std::vector<unsigned int>());
-    get_data(connections, "test");
+    get_data(connections, "input");
 
-    for(unsigned int i{}; i<connections.size(); ++i)
-        memory_paths.emplace(i,-1);
+    size_t n = connections.size();
+    std::vector<std::vector<std::vector<long long>>> dp(n, std::vector<std::vector<long long>>(2, std::vector<long long>(2, 0)));
+    std::vector<std::vector<std::vector<bool>>> visited(n, std::vector<std::vector<bool>>(2, std::vector<bool>(2, false)));
 
-    long long result{ get_every_path(0, false, false, connections) };
+    long long result{ get_every_path(0, false, false, connections, dp, visited) };
     std::cout << "The final result of the operation is: " << result << "\n";
     return 0;
 }
